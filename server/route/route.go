@@ -19,6 +19,11 @@ var routeMaps = []routeMap{
 		uri:        "/rating",
 		action:     addRating,
 	},
+	{
+		methodHTTP: http.MethodGet,
+		uri:        "/health",
+		action:     healthCheck,
+	},
 }
 
 func LoadRoute(r *gin.Engine) {
@@ -28,7 +33,8 @@ func LoadRoute(r *gin.Engine) {
 		switch rm.methodHTTP {
 		case http.MethodPost:
 			r.POST(rm.uri, rm.action)
-
+		case http.MethodGet:
+			r.GET(rm.uri, rm.action)
 		default:
 			log.Println("pau")
 		}

@@ -1,34 +1,35 @@
 package rating
 
 import (
+	"context"
 	"testing"
 )
 
 var tableTest = []struct {
-	ratingAvg []average
+	ratingAvg []Average
 	avgExpect float64
 }{
 	{
-		ratingAvg: []average{
+		ratingAvg: []Average{
 			{
-				overallRating: 5,
-				ratings:       252,
+				OverallRating: 5,
+				Ratings:       252,
 			},
 			{
-				overallRating: 4,
-				ratings:       124,
+				OverallRating: 4,
+				Ratings:       124,
 			},
 			{
-				overallRating: 3,
-				ratings:       40,
+				OverallRating: 3,
+				Ratings:       40,
 			},
 			{
-				overallRating: 2,
-				ratings:       29,
+				OverallRating: 2,
+				Ratings:       29,
 			},
 			{
-				overallRating: 1,
-				ratings:       33,
+				OverallRating: 1,
+				Ratings:       33,
 			},
 		},
 		avgExpect: 4.11,
@@ -57,4 +58,64 @@ func BenchmarkAverage(b *testing.B) {
 		}
 	}
 
+}
+
+func TestPutRating(t *testing.T) {
+
+	db := &repositoryMock{
+		GetItemByProductIdMock: func() (*RatingItem, error) {
+			return &RatingItem{
+				RatingId: "fake-hash-id",
+				Item:     "fake-hash-product-item-id",
+				Avg:      4.11,
+				Averages: []Average{
+					{
+						OverallRating: 5,
+						Ratings:       252,
+					},
+					{
+						OverallRating: 4,
+						Ratings:       124,
+					},
+					{
+						OverallRating: 3,
+						Ratings:       40,
+					},
+					{
+						OverallRating: 2,
+						Ratings:       29,
+					},
+					{
+						OverallRating: 1,
+						Ratings:       33,
+					},
+				},
+			}, nil
+		},
+		SaveRatingItemMock: func() error {
+			return nil
+		},
+	}
+
+	err := PutRating(context.Background(), &RatingInput{
+		ProductId:     "fake-hash-product-item-id",
+		OverallRating: 5,
+	}, db)
+
+	if err != nil {
+		t.Fail()
+	}
+}
+
+type repositoryMock struct {
+	GetItemByProductIdMock func() (*RatingItem, error)
+	SaveRatingItemMock     func() error
+}
+
+func (r *repositoryMock) GetItemByProductId(ctx context.Context, productId string) (*RatingItem, error) {
+	return r.GetItemByProductIdMock()
+}
+
+func (r *repositoryMock) SaveRatingItem(ctx context.Context, ratingProduct *RatingItem) error {
+	return r.SaveRatingItemMock()
 }

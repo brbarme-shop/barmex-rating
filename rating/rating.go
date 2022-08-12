@@ -7,13 +7,13 @@ type RatingAvg struct {
 	TotalRating   float64
 }
 
-func Average(avgs ...RatingAvg) float64 {
+func Average(ratings ...RatingAvg) float64 {
 
-	var r, v float64
-	for _, avg := range avgs {
-		r += avg.OverallRating * avg.TotalRating
-		v += avg.TotalRating
+	var totalAVG, votesAVG float64
+	for _, rating := range ratings {
+		totalAVG += rating.OverallRating * rating.TotalRating
+		votesAVG += rating.TotalRating
 	}
 
-	return math.Floor((r/v)*100) / 100
+	return math.Floor((totalAVG/votesAVG)*100) / 100
 }

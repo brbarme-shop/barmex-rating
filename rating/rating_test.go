@@ -65,7 +65,7 @@ func TestPutRating(t *testing.T) {
 	db := &repositoryMock{
 		GetItemByProductIdMock: func() (*RatingItem, error) {
 			return &RatingItem{
-				RatingId: "fake-hash-id",
+				RatingId: 1,
 				Item:     "fake-hash-product-item-id",
 				Avg:      4.11,
 				Averages: []Average{
@@ -112,7 +112,7 @@ type repositoryMock struct {
 	SaveRatingItemMock     func() error
 }
 
-func (r *repositoryMock) GetItemByProductId(ctx context.Context, productId string) (*RatingItem, error) {
+func (r *repositoryMock) GetRatingItemByItemId(ctx context.Context, itemId string) (*RatingItem, error) {
 	return r.GetItemByProductIdMock()
 }
 

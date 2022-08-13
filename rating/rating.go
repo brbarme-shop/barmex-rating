@@ -12,13 +12,13 @@ var (
 
 // RatingItemRepository interface must be implemented by a database service.
 type RatingItemRepository interface {
-	GetItemByProductId(ctx context.Context, productId string) (*RatingItem, error)
-	SaveRatingItem(ctx context.Context, ratingProduct *RatingItem) error
+	GetRatingItemByItemId(ctx context.Context, itemId string) (*RatingItem, error)
+	SaveRatingItem(ctx context.Context, ratingItem *RatingItem) error
 }
 
 // RatingItem is the representation of the model data persistence.
 type RatingItem struct {
-	RatingId string
+	RatingId int64
 	Item     string
 	Avg      float64
 	Averages []Average
@@ -60,7 +60,7 @@ func PutRating(ctx context.Context, input *RatingInput, repository RatingItemRep
 		return ErrRatingInputInvalid
 	}
 
-	ratingItem, err := repository.GetItemByProductId(ctx, input.ProductId)
+	ratingItem, err := repository.GetRatingItemByItemId(ctx, input.ProductId)
 	if err != nil {
 		return err
 	}

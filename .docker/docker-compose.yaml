@@ -1,0 +1,21 @@
+version: '3.9'
+
+networks:
+  ratingnet:
+    driver: bridge
+
+services:
+  postgres:
+    image: postgres:alpine
+    restart: always
+    container_name: ratingdb
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_DB: rating_db
+      POSTGRES_USER: rating_user
+      POSTGRES_PASSWORD: rating_pwd
+    networks:
+      - ratingnet

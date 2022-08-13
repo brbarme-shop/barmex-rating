@@ -6,6 +6,7 @@ import (
 	"math"
 )
 
+// errors customized
 var (
 	ErrRatingInputInvalid = errors.New("the RatingInput is invalid. The struct cannot be nil")
 )
@@ -74,16 +75,21 @@ func PutRating(ctx context.Context, input *RatingInput, repository RatingItemRep
 			Averages: []Average{average},
 		}
 
-		return repository.SaveRatingItem(ctx, ratingItem)
+		err = repository.SaveRatingItem(ctx, ratingItem)
+		return err
 	}
 
 	avgExist := false
+
 	for i := 0; i < len(ratingItem.Averages); i++ {
+
 		if ratingItem.Averages[i].OverallRating == input.OverallRating {
+
 			ratingItem.Averages[i].OverallRating += 1
 			avgExist = true
 			break
 		}
+
 	}
 
 	if !avgExist {
@@ -91,6 +97,6 @@ func PutRating(ctx context.Context, input *RatingInput, repository RatingItemRep
 	}
 
 	ratingItem.Avg = calcAVG(ratingItem.Averages...)
-
-	return repository.SaveRatingItem(ctx, ratingItem)
+	err = repository.SaveRatingItem(ctx, ratingItem)
+	return err
 }

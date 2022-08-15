@@ -25,6 +25,7 @@ type RatingItem struct {
 	Averages []Average
 }
 
+// RatingInput is to input in PutRating service function
 type RatingInput struct {
 	ProductId     string
 	OverallRating float64
@@ -55,37 +56,37 @@ func calcAVG(avgs ...Average) float64 {
 	return result
 }
 
-func PutRating(ctx context.Context, input *RatingInput, repository RatingItemRepository) error {
+// PutRating exec business logic to add rating count of the product
+func PutRating(ctx context.Context, ratingInput *RatingInput, repository RatingItemRepository) error {
 
-	if input == nil {
+	if ratingInput == nil {
 		return ErrRatingInputInvalid
 	}
 
-	ratingItem, err := repository.GetRatingItemByItemId(ctx, input.ProductId)
+	rating, err := repository.GetRatingItemByItemId(ctx, ratingInput.ProductId)
 	if err != nil {
 		return err
 	}
 
-	if ratingItem == nil {
+	if rating == nil {
 
-		average := Average{OverallRating: input.OverallRating, Ratings: float64(1)}
-		ratingItem = &RatingItem{
-			Item:     input.ProductId,
+		average := Average{OverallRating: ratingInput.OverallRating, Ratings: float64(1)}
+		rating = &RatingItem{
+			Item:     ratingInput.ProductId,
 			Avg:      calcAVG(average),
 			Averages: []Average{average},
 		}
 
-		err = repository.SaveRatingItem(ctx, ratingItem)
+		err = repository.SaveRatingItem(ctx, rating)
 		return err
 	}
 
 	avgExist := false
+	for i := 0; i < len(rating.Averages); i++ {
 
-	for i := 0; i < len(ratingItem.Averages); i++ {
+		if rating.Averages[i].OverallRating == ratingInput.OverallRating {
 
-		if ratingItem.Averages[i].OverallRating == input.OverallRating {
-
-			ratingItem.Averages[i].OverallRating += 1
+			rating.Averages[i].OverallRating += 1
 			avgExist = true
 			break
 		}
@@ -93,10 +94,10 @@ func PutRating(ctx context.Context, input *RatingInput, repository RatingItemRep
 	}
 
 	if !avgExist {
-		ratingItem.Averages = append(ratingItem.Averages, Average{OverallRating: input.OverallRating, Ratings: float64(1)})
+		rating.Averages = append(rating.Averages, Average{OverallRating: ratingInput.OverallRating, Ratings: float64(1)})
 	}
 
-	ratingItem.Avg = calcAVG(ratingItem.Averages...)
-	err = repository.SaveRatingItem(ctx, ratingItem)
+	rating.Avg = calcAVG(rating.Averages...)
+	err = repository.SaveRatingItem(ctx, rating)
 	return err
 }

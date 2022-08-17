@@ -1,34 +1,31 @@
 CREATE DATABASE rating_db;
 
-\c rating_db;
-
--- Drop tables
-DROP TABLE public.ratings;
-DROP TABLE public.ratings_average;
-
 CREATE TABLE public.ratings (
 	rating_id serial4 NOT NULL,
-	rating_item varchar NOT NULL,
+	rating_hash_id varchar (38) NOT null,
+	rating_item_id varchar NOT NULL,
 	rating_avg numeric NOT NULL,
-	CONSTRAINT ratings_pkey PRIMARY KEY (rating_id)
+	CONSTRAINT ratings_pkey PRIMARY KEY (rating_id),
+	UNIQUE(rating_item_id, rating_hash_id)
 );
 
--- Permissions
-ALTER TABLE public.ratings OWNER TO rating_user;
-GRANT ALL ON TABLE public.ratings TO rating_user;
+CREATE TABLE public.ratings_stars (
+	rating_star_id serial4 NOT NULL,
+	rating_star int NOT NULL,
+	CONSTRAINT ratings_stars_pkey PRIMARY KEY (rating_star_id)
+);
 
-CREATE TABLE public.ratings_average (
+CREATE TABLE public.ratings_averages (
 	rating_id serial4 NOT NULL,
-	rating_average_overall_rating int4 NOT NULL,
-	rating_average_ratings int4 NOT NULL,
-	CONSTRAINT ratings_average_pkey PRIMARY KEY (rating_id)
+	rating_star_id serial4 NOT NULL,
+	rating_count int NOT NULL
 );
+ 
+ALTER TABLE public.ratings_averages ADD CONSTRAINT fk_rating_id FOREIGN KEY (rating_id) REFERENCES public.ratings(rating_id);
+ALTER TABLE public.ratings_stars ADD CONSTRAINT fk_rating_star_id FOREIGN KEY (rating_star_id) REFERENCES public.ratings_stars(rating_star_id);
 
--- Permissions
+INSERT INTO ratings (rating_hash_id, rating_item_id, rating_avg) 
+VALUES('8925314f-3dc0-48b3-8a2e-2778350f28cf','0798112345321', 4.11);
 
-ALTER TABLE public.ratings_average OWNER TO rating_user;
-GRANT ALL ON TABLE public.ratings_average TO rating_user;
-
-
--- public.ratings_average foreign keys
-ALTER TABLE public.ratings_average ADD CONSTRAINT fk_rating_id FOREIGN KEY (rating_id) REFERENCES public.ratings(rating_id);
+INSERT INTO ratings_stars (rating_star) 
+VALUES(5);

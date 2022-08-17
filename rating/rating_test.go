@@ -118,6 +118,7 @@ func TestPutRatingAverageTest(t *testing.T) {
 	})
 
 	t.Run("Must successfully calculate average rating", func(t *testing.T) {
+
 		avg := &Average{RatingId: "8925314f-3dc0-48b3-8a2e-2778350f28xf", ItemId: "0798112345321", Avg: 0, AverageScore: []AverageScore{{StarId: "8925314f-3dc0-48b3-8a2e-2778350f28cf", Star: 5, ScorePoint: 251}, {StarId: "9025314f-3dc0-48b3-8a2e-2778350f28dg", Star: 4, ScorePoint: 124}, {StarId: "0025314f-3dc0-48b3-8a2e-2778350f28eh", Star: 3, ScorePoint: 40}, {StarId: "1125314f-3dc0-48b3-8a2e-2778350f28gi", Star: 2, ScorePoint: 29}, {StarId: "2125314f-3dc0-48b3-8a2e-2778350f28hj", Star: 1, ScorePoint: 33}}}
 
 		dbMock := &repositoryMock{
@@ -145,6 +146,7 @@ func TestPutRatingAverageTest(t *testing.T) {
 	})
 
 	t.Run("Must successfully calculate average rating and stop proccess when repository interface fails to update average", func(t *testing.T) {
+
 		avg := &Average{RatingId: "8925314f-3dc0-48b3-8a2e-2778350f28xf", ItemId: "0798112345321", Avg: 0, AverageScore: []AverageScore{{StarId: "8925314f-3dc0-48b3-8a2e-2778350f28cf", Star: 5, ScorePoint: 251}, {StarId: "9025314f-3dc0-48b3-8a2e-2778350f28dg", Star: 4, ScorePoint: 124}, {StarId: "0025314f-3dc0-48b3-8a2e-2778350f28eh", Star: 3, ScorePoint: 40}, {StarId: "1125314f-3dc0-48b3-8a2e-2778350f28gi", Star: 2, ScorePoint: 29}, {StarId: "2125314f-3dc0-48b3-8a2e-2778350f28hj", Star: 1, ScorePoint: 33}}}
 
 		dbMock := &repositoryMock{
@@ -172,6 +174,7 @@ func TestPutRatingAverageTest(t *testing.T) {
 	})
 
 	t.Run("Must successfully calculate average rating and stop proccess when repository interface fails to get star", func(t *testing.T) {
+
 		avg := &Average{RatingId: "8925314f-3dc0-48b3-8a2e-2778350f28xf", ItemId: "0798112345321", Avg: 0, AverageScore: []AverageScore{{StarId: "8925314f-3dc0-48b3-8a2e-2778350f28cf", Star: 5, ScorePoint: 251}, {StarId: "9025314f-3dc0-48b3-8a2e-2778350f28dg", Star: 4, ScorePoint: 124}, {StarId: "0025314f-3dc0-48b3-8a2e-2778350f28eh", Star: 3, ScorePoint: 40}, {StarId: "1125314f-3dc0-48b3-8a2e-2778350f28gi", Star: 2, ScorePoint: 29}, {StarId: "2125314f-3dc0-48b3-8a2e-2778350f28hj", Star: 1, ScorePoint: 33}}}
 
 		dbMock := &repositoryMock{
@@ -199,6 +202,7 @@ func TestPutRatingAverageTest(t *testing.T) {
 	})
 
 	t.Run("Must successfully calculate average rating and stop proccess when repository interface fails to update average", func(t *testing.T) {
+
 		avg := &Average{RatingId: "8925314f-3dc0-48b3-8a2e-2778350f28xf", ItemId: "0798112345321", Avg: 0, AverageScore: []AverageScore{{StarId: "8925314f-3dc0-48b3-8a2e-2778350f28cf", Star: 5, ScorePoint: 251}, {StarId: "9025314f-3dc0-48b3-8a2e-2778350f28dg", Star: 4, ScorePoint: 124}, {StarId: "0025314f-3dc0-48b3-8a2e-2778350f28eh", Star: 3, ScorePoint: 40}, {StarId: "1125314f-3dc0-48b3-8a2e-2778350f28gi", Star: 2, ScorePoint: 29}, {StarId: "2125314f-3dc0-48b3-8a2e-2778350f28hj", Star: 1, ScorePoint: 33}}}
 
 		dbMock := &repositoryMock{

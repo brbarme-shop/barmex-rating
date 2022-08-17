@@ -38,7 +38,7 @@ func PutRatingAverage(ctx context.Context, averageInput *AverageInput, db Averag
 		}
 	}
 
-	if averages == nil || len(averages.AverageScore) == 0 {
+	if averages == nil {
 
 		var star int
 		star, err = db.ReadStar(ctx, averageInput.StartId)

@@ -7,16 +7,13 @@ import (
 	"sync"
 
 	"github.com/brbarme-shop/brbarmex-rating/rating"
+	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 )
 
 type repository struct {
 	sourceName string
 	m          sync.Mutex
-}
-
-func (r *repository) CreateAverage(ctx context.Context, average *rating.Average) error {
-	return nil
 }
 
 func (r *repository) ReadAverages(ctx context.Context, itemId string) (*rating.Average, error) {
@@ -50,8 +47,8 @@ func (r *repository) ReadAverages(ctx context.Context, itemId string) (*rating.A
 	}
 
 	rows, err = db.QueryContext(ctx, `SELECT rs.rating_star_id, rs.rating_star, ra.rating_count  FROM ratings r 
-		LEFT JOIN ratings_averages ra on ra.rating_id  = r.rating_id 
-		LEFT JOIN ratings_stars rs on rs.rating_star_id = ra.rating_star_id  
+		INNER JOIN ratings_averages ra ON ra.rating_id      = r.rating_id 
+		INNER JOIN ratings_stars    rs ON rs.rating_star_id = ra.rating_star_id  
 		WHERE r.rating_item_id = $1
 		GROUP BY  rs.rating_star_id, rs.rating_star , r.rating_avg , ra.rating_count`, itemId)
 
@@ -106,108 +103,120 @@ func (r *repository) ReadStar(ctx context.Context, startid string) (int, error) 
 }
 
 func (r *repository) UpdateAverage(ctx context.Context, average *rating.Average) error {
-	return nil
+
+	r.m.Lock()
+	defer r.m.Unlock()
+
+	db, err := sql.Open("postgres", r.sourceName)
+	if err != nil {
+		return err
+	}
+
+	defer db.Close()
+
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	sql := `UPDATE ratings
+	SET rating_avg=$1
+	WHERE rating_item_id=$2 AND rating_hash_id=$3
+	`
+
+	rows, err := tx.ExecContext(ctx, sql, average.Avg, average.RatingId, average.ItemId)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	rowsAffected, err := rows.RowsAffected()
+	if err != nil || rowsAffected <= 0 {
+		tx.Rollback()
+		return err
+	}
+
+	sql = `UPDATE ratings_averages
+	SET rating_count=$1;
+	WHERE rating_id=$2
+	`
+
+	for i := range average.AverageScore {
+		rows, err := tx.ExecContext(ctx, sql, average.RatingId, average.AverageScore[i].ScorePoint)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+
+		rowsAffected, err := rows.RowsAffected()
+		if err != nil || rowsAffected <= 0 {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	return err
 }
 
-func NewRatingRepository(sourceName string) rating.AverageRepository {
-	return &repository{sourceName: sourceName}
+func (r *repository) CreateAverage(ctx context.Context, average *rating.Average) error {
+
+	r.m.Lock()
+	defer r.m.Unlock()
+
+	db, err := sql.Open("postgres", r.sourceName)
+	if err != nil {
+		return err
+	}
+
+	defer db.Close()
+
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	sql := `INSERT INTO ratings
+	(rating_hash_id, rating_item_id, rating_avg)
+	VALUES($1, $2, $3)
+	RETURNING rating_id
+	`
+
+	ratingHashId := uuid.NewString()
+	var ratingId string
+
+	row := tx.QueryRowContext(ctx, sql, ratingHashId, average.ItemId, average.Avg)
+	err = row.Scan(&ratingId)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	sql = `INSERT INTO ratings_averages
+	(rating_id, rating_star_id, rating_count)
+	VALUES($1, $2, $3);
+	`
+
+	for i := range average.AverageScore {
+		_, err = tx.ExecContext(ctx, sql, ratingHashId, average.AverageScore[i].StarId, average.AverageScore[i].ScorePoint)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return err
 }
-
-// func (r *repository) SaveRating(ctx context.Context, ratingItem *rating.RatingItem) error {
-
-// 	db, err := sql.Open("postgres", r.dataSourceName)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	defer db.Close()
-
-// 	tx, err := db.BeginTx(ctx, nil)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	sql := `INSERT INTO ratings
-// 	(rating_item, rating_avg)
-// 	VALUES($1, $2) RETURNING rating_id`
-
-// 	row := tx.QueryRowContext(ctx, sql, ratingItem.Item, ratingItem.Avg)
-
-// 	var rating_id int64
-// 	err = row.Scan(&rating_id)
-// 	if err != nil {
-// 		tx.Rollback()
-// 		return err
-// 	}
-
-// 	sql = `INSERT INTO ratings_average
-// 	(rating_id, rating_average_overall_rating, rating_average_ratings)
-// 	VALUES($1, $2, $3);
-// 	`
-
-// 	for _, avg := range ratingItem.Averages {
-// 		_, err = tx.ExecContext(ctx, sql, rating_id, avg.OverallRating, avg.Ratings)
-// 		if err != nil {
-// 			tx.Rollback()
-// 			return err
-// 		}
-// 	}
-
-// 	err = tx.Commit()
-// 	if err != nil {
-// 		tx.Rollback()
-// 		return err
-// 	}
-
-// 	return err
-// }
-
-// func (r *repository) UpdateRating(ctx context.Context, ratingItem *rating.RatingItem) error {
-
-// 	db, err := sql.Open("postgres", r.dataSourceName)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	defer db.Close()
-
-// 	tx, err := db.BeginTx(ctx, nil)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	sql := `UPDATE ratings
-// 	SET rating_avg=$1
-// 	WHERE rating_id=$2;
-// 	`
-// 	_, err = tx.ExecContext(ctx, sql, ratingItem.RatingId, ratingItem.Avg)
-// 	if err != nil {
-// 		tx.Rollback()
-// 		return err
-// 	}
-
-// 	sql = `UPDATE ratings_average
-// 	SET rating_average_ratings=$1
-// 	WHERE rating_id=$2 AND rating_average_overall_rating=$3;
-// 	`
-
-// 	for i := range ratingItem.Averages {
-// 		_, err = tx.ExecContext(ctx, sql, ratingItem.RatingId, ratingItem.Averages[i].Ratings, ratingItem.Averages[i].Ratings)
-// 		if err != nil {
-// 			tx.Rollback()
-// 			return err
-// 		}
-// 	}
-
-// 	err = tx.Commit()
-// 	if err != nil {
-// 		tx.Rollback()
-// 		return err
-// 	}
-
-// 	return err
-// }
 
 // func NewPostgreSqlRepository(strConnection string) rating.RatingItemRepository {
 // 	return &repository{dataSourceName: strConnection}
 // }
+
+func NewRatingRepository(sourceName string) rating.AverageRepository {
+	return &repository{sourceName: sourceName}
+}

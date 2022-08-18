@@ -9,13 +9,14 @@ import (
 )
 
 var (
-	db = postgresql.NewRatingRepository("host=localhost port=5432 user=rating_user password=rating_pwd dbname=rating_db sslmode=disable")
+	db               = postgresql.NewSqlDB("host=localhost port=5432 user=rating_user password=rating_pwd dbname=rating_db sslmode=disable")
+	ratingRepository = postgresql.NewRatingRepository(db)
 )
 
 // @Post
 func addRating(c *gin.Context) {
 
-	var ratingInput *rating.AverageInput
+	var ratingInput *rating.RatingInput
 
 	err := c.BindJSON(&ratingInput)
 	if err != nil {
@@ -23,7 +24,7 @@ func addRating(c *gin.Context) {
 		return
 	}
 
-	err = rating.PutRatingAverage(c.Request.Context(), ratingInput, db)
+	err = rating.PutRating(c.Request.Context(), ratingInput, ratingRepository)
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, err.Error())
 		return

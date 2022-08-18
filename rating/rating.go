@@ -3,6 +3,7 @@ package rating
 import (
 	"context"
 	"errors"
+	"math"
 )
 
 var (
@@ -12,89 +13,70 @@ var (
 	ErrStarIdNotFound            = errors.New("the StarId not containt star")
 )
 
-type AverageRepository interface {
-	CreateAverage(ctx context.Context, average *Average) error
-	ReadAverages(ctx context.Context, itemId string) (*Average, error)
-	ReadStar(ctx context.Context, startid string) (int, error)
-	UpdateAverage(ctx context.Context, average *Average) error
+type RatingAverageRepository interface {
+	CreateRatingAverage(ctx context.Context, average *RatingAverage) error
+	ReadRatingAverages(ctx context.Context, itemId string) (*RatingAverage, error)
+	UpdateRatingAverage(ctx context.Context, average *RatingAverage) error
 }
 
-func PutRatingAverage(ctx context.Context, averageInput *AverageInput, db AverageRepository) error {
+type RatingInput struct {
+	ItemId string `json:"item_id"`
+	Star   int64  `json:"star"`
+}
 
-	defer func() {
-		if recover := recover(); recover != nil {
-			return
-		}
-	}()
+type Rating struct {
+	Star  int64
+	Count int64
+}
 
-	if averageInput == nil || len(averageInput.ItemId) == 0 || len(averageInput.StartId) == 0 {
+type RatingAverage struct {
+	Id      string
+	ItemId  string
+	Average float64
+	Ratings []Rating
+}
+
+func (r *RatingAverage) calcAVG() {
+
+	var avg, avgCounts float64
+	for i := range r.Ratings {
+		avg += float64(r.Ratings[i].Star) * float64(r.Ratings[i].Count)
+		avgCounts += float64(r.Ratings[i].Count)
+	}
+
+	r.Average = math.Floor((avg/avgCounts)*100) / 100
+}
+
+func PutRating(ctx context.Context, ratingInput *RatingInput, db RatingAverageRepository) error {
+
+	if ratingInput == nil || len(ratingInput.ItemId) == 0 || ratingInput.Star == 0 {
 		return ErrRatingAverageInputInvalid
 	}
 
-	averages, err := db.ReadAverages(ctx, averageInput.ItemId)
+	_rating, err := db.ReadRatingAverages(ctx, ratingInput.ItemId)
 	if err != nil {
 		if !errors.Is(err, ErrAverageNotExist) {
 			return err
 		}
 	}
 
-	if averages == nil {
-
-		var star int
-		star, err = db.ReadStar(ctx, averageInput.StartId)
-		if err != nil {
-			return err
-		}
-
-		averages = &Average{
-			ItemId: averageInput.ItemId,
-			AverageScore: []AverageScore{{
-				ScorePoint: 1,
-				StarId:     averageInput.ItemId,
-				Star:       star,
-			}},
-		}
-
-		averages.Avg = calcAVG(averages.AverageScore...)
-
-		err = db.CreateAverage(ctx, averages)
-		if err != nil {
-			return err
-		}
-
-		return err
+	if _rating == nil {
+		_rating = &RatingAverage{}
+		_rating.ItemId = ratingInput.ItemId
+		_rating.Ratings = append(_rating.Ratings, Rating{Star: ratingInput.Star, Count: 1})
+		_rating.calcAVG()
+		return db.CreateRatingAverage(ctx, _rating)
 	}
 
-	var updated bool
-	for i := range averages.AverageScore {
-		if averages.AverageScore[i].StarId == averageInput.StartId {
-			averages.AverageScore[i].ScorePoint += 1
-			updated = true
-			break
+	for i := range _rating.Ratings {
+		if _rating.Ratings[i].Star == ratingInput.Star {
+			_rating.Ratings[i].Count += 1
+			_rating.calcAVG()
+			return db.UpdateRatingAverage(ctx, _rating)
 		}
 	}
 
-	if !updated {
-
-		var star int
-		star, err = db.ReadStar(ctx, averageInput.StartId)
-		if err != nil {
-			return err
-		}
-
-		averages.AverageScore = append(averages.AverageScore, AverageScore{
-			ScorePoint: 1,
-			StarId:     averageInput.StartId,
-			Star:       star,
-		})
-	}
-
-	averages.Avg = calcAVG(averages.AverageScore...)
-
-	err = db.UpdateAverage(ctx, averages)
-	if err != nil {
-		return err
-	}
-
-	return err
+	_rating.Ratings = append(_rating.Ratings, Rating{Star: ratingInput.Star, Count: 1})
+	_rating.calcAVG()
+	return db.CreateRatingAverage(ctx, _rating)
 }

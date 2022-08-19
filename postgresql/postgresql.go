@@ -81,7 +81,7 @@ func (r *repository) ReadRatingAverages(ctx context.Context, itemId string) (*ra
 		avg.Id = ratingSelect.rating_hash_id
 		avg.ItemId = ratingSelect.rating_item_id
 		avg.Average = ratingSelect.rating_avg
-		avg.Ratings = append(avg.Ratings, rating.Rating{Star: ratingSelect.rating_start_i, Count: ratingSelect.rating_start_ii_count})
+		avg.Ratings = append(avg.Ratings, rating.Rating{Star: ratingSelect.rating_start_i, Count: ratingSelect.rating_start_i_count})
 		avg.Ratings = append(avg.Ratings, rating.Rating{Star: ratingSelect.rating_start_ii, Count: ratingSelect.rating_start_ii_count})
 		avg.Ratings = append(avg.Ratings, rating.Rating{Star: ratingSelect.rating_start_iii, Count: ratingSelect.rating_start_iii_count})
 		avg.Ratings = append(avg.Ratings, rating.Rating{Star: ratingSelect.rating_start_iv, Count: ratingSelect.rating_start_iv_count})

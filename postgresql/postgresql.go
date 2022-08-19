@@ -5,11 +5,15 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"sync"
 
 	"github.com/brbarme-shop/brbarmex-rating/rating"
 	"github.com/google/uuid"
 	_ "github.com/lib/pq"
+)
+
+const (
+	sqlSelectRatingAverage = `SELECT rating_hash_id, rating_item_id, rating_avg, rating_start_i, rating_start_i_count, rating_start_ii, rating_start_ii_count, rating_start_iii, rating_start_iii_count, rating_start_iv, rating_start_iv_count, rating_start_x, rating_start_x_count FROM ratings_avarages WHERE rating_item_id = $1`
+	sqlUpdateRating        = `UPDATE ratings_avarages SET rating_avg=$1, rating_start_i_count=$2 ,rating_start_ii_count=$3, rating_start_iii_count=$4, rating_start_iv_count=$5, rating_start_x_count=$6 WHERE rating_hash_id=$7 AND rating_item_id=$8`
 )
 
 type ratingAverageTable struct {
@@ -29,7 +33,6 @@ type ratingAverageTable struct {
 }
 
 type repository struct {
-	m  sync.Mutex
 	db *sql.DB
 }
 
@@ -41,12 +44,7 @@ func (r *repository) ReadRatingAverages(ctx context.Context, itemId string) (*ra
 		}
 	}()
 
-	r.m.Lock()
-	defer r.m.Unlock()
-
-	rows, err := r.db.QueryContext(ctx, `SELECT rating_hash_id, rating_item_id, rating_avg, rating_start_i, rating_start_i_count, rating_start_ii, rating_start_ii_count, rating_start_iii, rating_start_iii_count, rating_start_iv, rating_start_iv_count, rating_start_x, rating_start_x_count
-	FROM ratings_avarages
-	WHERE rating_item_id = $1`, itemId)
+	rows, err := r.db.QueryContext(ctx, sqlSelectRatingAverage, itemId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, rating.ErrAverageNotExist
@@ -55,7 +53,6 @@ func (r *repository) ReadRatingAverages(ctx context.Context, itemId string) (*ra
 	}
 
 	defer rows.Close()
-	var avg rating.RatingAverage
 
 	if rows.Next() {
 
@@ -78,14 +75,18 @@ func (r *repository) ReadRatingAverages(ctx context.Context, itemId string) (*ra
 			return nil, err
 		}
 
-		avg.Id = ratingSelect.rating_hash_id
-		avg.ItemId = ratingSelect.rating_item_id
-		avg.Average = ratingSelect.rating_avg
+		var avg rating.RatingAverage
+
+		avg.Ratings = make([]rating.Rating, 0, 5)
 		avg.Ratings = append(avg.Ratings, rating.Rating{Star: ratingSelect.rating_start_i, Count: ratingSelect.rating_start_i_count})
 		avg.Ratings = append(avg.Ratings, rating.Rating{Star: ratingSelect.rating_start_ii, Count: ratingSelect.rating_start_ii_count})
 		avg.Ratings = append(avg.Ratings, rating.Rating{Star: ratingSelect.rating_start_iii, Count: ratingSelect.rating_start_iii_count})
 		avg.Ratings = append(avg.Ratings, rating.Rating{Star: ratingSelect.rating_start_iv, Count: ratingSelect.rating_start_iv_count})
 		avg.Ratings = append(avg.Ratings, rating.Rating{Star: ratingSelect.rating_start_x, Count: ratingSelect.rating_start_x_count})
+
+		avg.Id = ratingSelect.rating_hash_id
+		avg.ItemId = ratingSelect.rating_item_id
+		avg.Average = ratingSelect.rating_avg
 
 		return &avg, nil
 	}
@@ -100,9 +101,6 @@ func (r *repository) UpdateRatingAverage(ctx context.Context, ratingAverage *rat
 			return
 		}
 	}()
-
-	r.m.Lock()
-	defer r.m.Unlock()
 
 	var ratingInsert ratingAverageTable
 	for i := range ratingAverage.Ratings {
@@ -125,10 +123,7 @@ func (r *repository) UpdateRatingAverage(ctx context.Context, ratingAverage *rat
 	ratingInsert.rating_avg = ratingAverage.Average
 	ratingInsert.rating_item_id = ratingAverage.ItemId
 
-	rows, err := r.db.ExecContext(ctx, `UPDATE ratings_avarages
-	SET rating_avg=$1, rating_start_i_count=$2 ,rating_start_ii_count=$3, rating_start_iii_count=$4, rating_start_iv_count=$5, rating_start_x_count=$6
-	WHERE rating_hash_id=$7 AND rating_item_id=$8
-	`, ratingInsert.rating_avg,
+	rows, err := r.db.ExecContext(ctx, sqlUpdateRating, ratingInsert.rating_avg,
 		ratingInsert.rating_start_i_count,
 		ratingInsert.rating_start_ii_count,
 		ratingInsert.rating_start_iii_count,
@@ -161,14 +156,6 @@ func (r *repository) CreateRatingAverage(ctx context.Context, ratingAverage *rat
 			return
 		}
 	}()
-
-	r.m.Lock()
-	defer r.m.Unlock()
-
-	tx, err := r.db.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
 
 	var ratingInsert ratingAverageTable
 	for i := range ratingAverage.Ratings {
@@ -216,7 +203,7 @@ func (r *repository) CreateRatingAverage(ctx context.Context, ratingAverage *rat
 	ratingInsert.rating_avg = ratingAverage.Average
 	ratingInsert.rating_item_id = ratingAverage.ItemId
 
-	if row, err := tx.ExecContext(ctx,
+	if row, err := r.db.ExecContext(ctx,
 		`INSERT INTO ratings_avarages
 	(rating_hash_id, rating_item_id, rating_avg, rating_start_i, rating_start_i_count, rating_start_ii, rating_start_ii_count, rating_start_iii, rating_start_iii_count, rating_start_iv, rating_start_iv_count, rating_start_x, rating_start_x_count)
 	VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
@@ -233,13 +220,11 @@ func (r *repository) CreateRatingAverage(ctx context.Context, ratingAverage *rat
 		ratingInsert.rating_start_iv_count,
 		ratingInsert.rating_start_x,
 		ratingInsert.rating_start_x_count); err != nil {
-		tx.Rollback()
 		return err
 	} else {
 
 		rowsAffected, err := row.RowsAffected()
 		if err != nil {
-			tx.Rollback()
 			return err
 		}
 
@@ -248,13 +233,7 @@ func (r *repository) CreateRatingAverage(ctx context.Context, ratingAverage *rat
 		}
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	return err
+	return nil
 }
 
 func NewRatingRepository(db *sql.DB) rating.RatingAverageRepository {

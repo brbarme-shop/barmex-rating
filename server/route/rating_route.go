@@ -30,5 +30,5 @@ func addRating(c *gin.Context) {
 		return
 	}
 
-	c.IndentedJSON(http.StatusCreated, ratingInput)
+	c.IndentedJSON(http.StatusOK, nil)
 }

@@ -7,6 +7,7 @@ type IConfig interface {
 	AppName() string
 	AppVersion() string
 	DabaseDriverName() string
+	Port() string
 }
 
 type configuration struct {
@@ -14,6 +15,11 @@ type configuration struct {
 	appName        string
 	appVersionName string
 	databaseDriver string
+	port           string
+}
+
+func (c *configuration) Port() string {
+	return c.port
 }
 
 func (c *configuration) DabaseDriverName() string {
@@ -48,5 +54,6 @@ func NewConfiguration() IConfig {
 		appName:        viper.GetString("app.name"),
 		appVersionName: viper.GetString("app.version"),
 		databaseDriver: viper.GetString("database.driver"),
+		port:           viper.GetString("server.port"),
 	}
 }

@@ -2,7 +2,6 @@ package route
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -36,7 +35,6 @@ func addRating(c *gin.Context) {
 
 	err = rating.PutRating(c.Request.Context(), ratingInput, ratingRepository)
 	if err != nil {
-		fmt.Println(err)
 		c.IndentedJSON(http.StatusInternalServerError, err.Error())
 		return
 	}

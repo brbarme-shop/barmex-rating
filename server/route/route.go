@@ -1,7 +1,7 @@
 package route
 
 import (
-	"log"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -36,7 +36,7 @@ func LoadRoute(r *gin.Engine) {
 		case http.MethodGet:
 			r.GET(rm.uri, rm.action)
 		default:
-			log.Println("pau")
+			panic(fmt.Sprintln("method http not implemented or is invalid ", rm.methodHTTP))
 		}
 
 	}

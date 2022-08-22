@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/brbarme-shop/brbarmex-rating/config"
 	"github.com/brbarme-shop/brbarmex-rating/server/route"
 	"github.com/gin-gonic/gin"
 )
@@ -24,7 +25,7 @@ func Start() {
 	route.LoadRoute(router)
 
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    config.NewConfiguration().Port(),
 		Handler: router,
 	}
 
@@ -47,7 +48,7 @@ func Start() {
 	// the request it is currently handling
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
-	
+
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Fatal("Server forced to shutdown: ", err)
 	}

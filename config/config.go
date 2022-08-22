@@ -34,9 +34,7 @@ func (c *configuration) AppVersion() string {
 
 func NewConfiguration() IConfig {
 
-	viper.SetConfigFile(".env")
-	viper.SetConfigFile(".")
-	viper.SetConfigFile("yaml")
+	viper.SetConfigFile("env.yaml")
 
 	viper.AutomaticEnv()
 

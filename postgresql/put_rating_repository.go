@@ -36,7 +36,12 @@ type repository struct {
 	db *sql.DB
 }
 
-func (r *repository) ReadRatingAverages(ctx context.Context, itemId string) (*rating.RatingAverage, error) {
+// UpdateRating implements rating.PutRatingRepository
+func (*repository) UpdateRating(ctx context.Context, itemId string, average float64, star, count int64) error {
+	panic("unimplemented")
+}
+
+func (r *repository) ReadByItemId(ctx context.Context, itemId string) (*rating.RatingAverage, error) {
 
 	defer func() {
 		if recover := recover(); recover != nil {
@@ -47,7 +52,7 @@ func (r *repository) ReadRatingAverages(ctx context.Context, itemId string) (*ra
 	rows, err := r.db.QueryContext(ctx, sqlSelectRatingAverage, itemId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, rating.ErrAverageNotExist
+			return nil, rating.ErrRatingNotFound
 		}
 		return nil, err
 	}
@@ -84,7 +89,7 @@ func (r *repository) ReadRatingAverages(ctx context.Context, itemId string) (*ra
 		avg.Ratings = append(avg.Ratings, rating.Rating{Star: ratingSelect.rating_start_iv, Count: ratingSelect.rating_start_iv_count})
 		avg.Ratings = append(avg.Ratings, rating.Rating{Star: ratingSelect.rating_start_x, Count: ratingSelect.rating_start_x_count})
 
-		avg.Id = ratingSelect.rating_hash_id
+		//	avg.Id = ratingSelect.rating_hash_id
 		avg.ItemId = ratingSelect.rating_item_id
 		avg.Average = ratingSelect.rating_avg
 
@@ -94,7 +99,7 @@ func (r *repository) ReadRatingAverages(ctx context.Context, itemId string) (*ra
 	return nil, nil
 }
 
-func (r *repository) UpdateRatingAverage(ctx context.Context, ratingAverage *rating.RatingAverage) error {
+func (r *repository) Update(ctx context.Context, ratingAverage *rating.RatingAverage) error {
 
 	defer func() {
 		if recover := recover(); recover != nil {
@@ -119,7 +124,7 @@ func (r *repository) UpdateRatingAverage(ctx context.Context, ratingAverage *rat
 		}
 	}
 
-	ratingInsert.rating_hash_id = ratingAverage.Id
+	//ratingInsert.rating_hash_id = ratingAverage.Id
 	ratingInsert.rating_avg = ratingAverage.Average
 	ratingInsert.rating_item_id = ratingAverage.ItemId
 
@@ -149,7 +154,7 @@ func (r *repository) UpdateRatingAverage(ctx context.Context, ratingAverage *rat
 	return nil
 }
 
-func (r *repository) CreateRatingAverage(ctx context.Context, ratingAverage *rating.RatingAverage) error {
+func (r *repository) PutNewRating(ctx context.Context, itemId string, average float64, star, count int64) error {
 
 	defer func() {
 		if recover := recover(); recover != nil {
@@ -157,85 +162,48 @@ func (r *repository) CreateRatingAverage(ctx context.Context, ratingAverage *rat
 		}
 	}()
 
-	var ratingInsert ratingAverageTable
-	for i := range ratingAverage.Ratings {
-
-		switch ratingAverage.Ratings[i].Star {
-		case 1:
-			ratingInsert.rating_start_i = 1
-			ratingInsert.rating_start_ii = 2
-			ratingInsert.rating_start_iii = 3
-			ratingInsert.rating_start_iv = 4
-			ratingInsert.rating_start_x = 5
-			ratingInsert.rating_start_i_count = 1
-		case 2:
-			ratingInsert.rating_start_i = 1
-			ratingInsert.rating_start_ii = 2
-			ratingInsert.rating_start_iii = 3
-			ratingInsert.rating_start_iv = 4
-			ratingInsert.rating_start_x = 5
-			ratingInsert.rating_start_ii_count = 1
-		case 3:
-			ratingInsert.rating_start_i = 1
-			ratingInsert.rating_start_ii = 2
-			ratingInsert.rating_start_iii = 3
-			ratingInsert.rating_start_iv = 4
-			ratingInsert.rating_start_x = 5
-			ratingInsert.rating_start_iii_count = 1
-		case 4:
-			ratingInsert.rating_start_i = 1
-			ratingInsert.rating_start_ii = 2
-			ratingInsert.rating_start_iii = 3
-			ratingInsert.rating_start_iv = 4
-			ratingInsert.rating_start_x = 5
-			ratingInsert.rating_start_iv_count = 1
-		case 5:
-			ratingInsert.rating_start_i = 1
-			ratingInsert.rating_start_ii = 2
-			ratingInsert.rating_start_iii = 3
-			ratingInsert.rating_start_iv = 4
-			ratingInsert.rating_start_x = 5
-			ratingInsert.rating_start_x_count = 1
-		}
+	var sqlSmt *sql.Stmt
+	var err error
+	switch star {
+	case 1:
+		sqlSmt, err = r.db.PrepareContext(ctx, ``)
+	case 2:
+		sqlSmt, err = r.db.PrepareContext(ctx, ``)
+	case 3:
+		sqlSmt, err = r.db.PrepareContext(ctx, ``)
+	case 4:
+		sqlSmt, err = r.db.PrepareContext(ctx, ``)
+	case 5:
+		sqlSmt, err = r.db.PrepareContext(ctx, ``)
+	default:
+		err = errors.New("")
 	}
 
-	ratingInsert.rating_hash_id = uuid.NewString()
-	ratingInsert.rating_avg = ratingAverage.Average
-	ratingInsert.rating_item_id = ratingAverage.ItemId
+	if err != nil {
+		return nil
+	}
 
-	if row, err := r.db.ExecContext(ctx,
-		`INSERT INTO ratings_avarages
-	(rating_hash_id, rating_item_id, rating_avg, rating_start_i, rating_start_i_count, rating_start_ii, rating_start_ii_count, rating_start_iii, rating_start_iii_count, rating_start_iv, rating_start_iv_count, rating_start_x, rating_start_x_count)
-	VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
-		ratingInsert.rating_hash_id,
-		ratingInsert.rating_item_id,
-		ratingInsert.rating_avg,
-		ratingInsert.rating_start_i,
-		ratingInsert.rating_start_i_count,
-		ratingInsert.rating_start_ii,
-		ratingInsert.rating_start_ii_count,
-		ratingInsert.rating_start_iii,
-		ratingInsert.rating_start_iii_count,
-		ratingInsert.rating_start_iv,
-		ratingInsert.rating_start_iv_count,
-		ratingInsert.rating_start_x,
-		ratingInsert.rating_start_x_count); err != nil {
+	sqlResult, err := sqlSmt.ExecContext(ctx, uuid.NewString(), itemId, average, star, count)
+	if err != nil {
+		return nil
+	}
+
+	if err != nil {
+		return nil
+	}
+
+	rowsAffected, err := sqlResult.RowsAffected()
+	if err != nil {
 		return err
-	} else {
-
-		rowsAffected, err := row.RowsAffected()
-		if err != nil {
-			return err
-		}
-
-		if rowsAffected <= 0 {
-			return fmt.Errorf("pau")
-		}
 	}
 
-	return nil
+	if rowsAffected <= 0 {
+		err = fmt.Errorf("pau")
+	}
+
+	return err
 }
 
-func NewRatingRepository(db *sql.DB) rating.RatingAverageRepository {
+func NewRatingRepository(db *sql.DB) rating.PutRatingRepository {
 	return &repository{db: db}
 }

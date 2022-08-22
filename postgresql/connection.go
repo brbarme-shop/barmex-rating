@@ -15,7 +15,7 @@ func NewSqlDB(sourceName string) *sql.DB {
 		log.Fatal(err)
 	}
 
-	db.SetConnMaxLifetime(0)
+	db.SetConnMaxLifetime(1)
 	db.SetMaxIdleConns(50)
 	db.SetMaxOpenConns(50)
 	return db

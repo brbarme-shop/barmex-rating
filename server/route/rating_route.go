@@ -16,7 +16,7 @@ var (
 // @Post
 func addRating(c *gin.Context) {
 
-	var ratingInput *rating.RatingInput
+	var ratingInput *rating.PutRatingInput
 
 	err := c.BindJSON(&ratingInput)
 	if err != nil {

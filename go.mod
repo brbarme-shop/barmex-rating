@@ -8,12 +8,6 @@ require (
 )
 
 require (
-	github.com/chzyer/readline v1.5.1 // indirect
-	github.com/google/pprof v0.0.0-20220818150347-1763105d910c // indirect
-	github.com/ianlancetaylor/demangle v0.0.0-20220517205856-0058ec4f073c // indirect
-)
-
-require (
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect

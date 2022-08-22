@@ -6,13 +6,15 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/brbarme-shop/brbarmex-rating/config"
 	"github.com/brbarme-shop/brbarmex-rating/postgresql"
 	"github.com/brbarme-shop/brbarmex-rating/rating"
 	"github.com/gin-gonic/gin"
 )
 
 var (
-	db               = postgresql.NewSqlDB("host=localhost port=5432 user=rating_user password=rating_pwd dbname=rating_db sslmode=disable")
+	cfg              = config.NewConfiguration()
+	db               = postgresql.NewSqlDB(cfg)
 	ratingRepository = postgresql.NewRatingRepository(db)
 )
 

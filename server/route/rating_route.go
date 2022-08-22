@@ -1,6 +1,9 @@
 package route
 
 import (
+	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/brbarme-shop/brbarmex-rating/postgresql"
@@ -16,16 +19,22 @@ var (
 // @Post
 func addRating(c *gin.Context) {
 
-	var ratingInput *rating.PutRatingInput
-
-	err := c.BindJSON(&ratingInput)
+	b, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		c.IndentedJSON(http.StatusBadRequest, err)
-		return
+		c.IndentedJSON(http.StatusInternalServerError, err.Error())
+	}
+
+	defer c.Request.Body.Close()
+
+	var ratingInput *rating.PutRatingInput
+	err = json.Unmarshal(b, &ratingInput)
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, err.Error())
 	}
 
 	err = rating.PutRating(c.Request.Context(), ratingInput, ratingRepository)
 	if err != nil {
+		fmt.Println(err)
 		c.IndentedJSON(http.StatusInternalServerError, err.Error())
 		return
 	}

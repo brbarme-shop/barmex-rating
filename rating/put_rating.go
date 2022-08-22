@@ -11,10 +11,12 @@ var (
 	ErrRatingNotFound           = errors.New("the RatingAverageInput not exists")
 	ErrAverageRepositoryInvalid = errors.New("the AverageRepository can't be NIL")
 	ErrStarIdNotFound           = errors.New("the StarId not containt star")
+	ErrFailedToPutNewRating     = errors.New("a")
+	ErrStartNotIdentifier       = errors.New("")
 )
 
 type PutRatingRepository interface {
-	PutNewRating(ctx context.Context, itemId string, average float64, star, count int64) error
+	PutNewRating(ctx context.Context, itemId string, star int64) error
 	ReadByItemId(ctx context.Context, itemId string) (*RatingAverage, error)
 	UpdateRating(ctx context.Context, itemId string, average float64, star, count int64) error
 }
@@ -61,7 +63,7 @@ func PutRating(ctx context.Context, ratingInput *PutRatingInput, db PutRatingRep
 	}
 
 	if ratingData == nil {
-		err = db.PutNewRating(ctx, ratingInput.ItemId, 0.01, ratingInput.Star, 1)
+		err = db.PutNewRating(ctx, ratingInput.ItemId, ratingInput.Star)
 		return err
 	}
 
@@ -73,13 +75,9 @@ func PutRating(ctx context.Context, ratingInput *PutRatingInput, db PutRatingRep
 		}
 	}
 
-	for i := range ratingData.Ratings {
-		if ratingData.Ratings[i].Star == ratingInput.Star {
-			ratingData.Ratings[i] = Rating{Star: ratingInput.Star, Count: 1}
-			ratingData.calcAVG()
-			return db.UpdateRating(ctx, ratingData.ItemId, ratingData.Average, ratingData.Ratings[i].Star, ratingData.Ratings[i].Count)
-		}
-	}
+	ratingData.Ratings = append(ratingData.Ratings, Rating{Star: ratingInput.Star, Count: 1})
+	ratingData.calcAVG()
 
+	err = db.UpdateRating(ctx, ratingData.ItemId, ratingData.Average, ratingInput.Star, 1)
 	return err
 }

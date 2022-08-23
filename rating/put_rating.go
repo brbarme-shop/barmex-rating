@@ -11,8 +11,8 @@ var (
 	ErrRatingNotFound           = errors.New("the RatingAverageInput not exists")
 	ErrAverageRepositoryInvalid = errors.New("the AverageRepository can't be NIL")
 	ErrStarIdNotFound           = errors.New("the StarId not containt star")
-	ErrFailedToPutNewRating     = errors.New("a")
-	ErrStartNotIdentifier       = errors.New("")
+	ErrFailedToPutNewRating     = errors.New("failed to put new rating")
+	ErrStartNotIdentifier       = errors.New("star not found or not exist")
 )
 
 type PutRatingRepository interface {

@@ -50,7 +50,7 @@ func (r *RatingAverage) calcAVG() {
 
 func PutRating(ctx context.Context, ratingInput *PutRatingInput, db PutRatingRepository) error {
 
-	isInvalid := ratingInput == nil || len(ratingInput.ItemId) == 0 || ratingInput.Star == 0
+	isInvalid := ratingInput == nil || len(ratingInput.ItemId) == 0 || ratingInput.Star <= 0 || ratingInput.Star > 5
 	if isInvalid {
 		return ErrPutRatingInputInvalid
 	}

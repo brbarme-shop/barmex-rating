@@ -7,11 +7,37 @@ import (
 	"testing"
 )
 
+var ctx = context.TODO()
+
 func TestPutRating(t *testing.T) {
 
-	t.Run("Should abort process when input is invalid and return error ErrPutRatingInputInvalid", func(t *testing.T) {
+	t.Run("Should abort process when `ReadByItemId` returns an error other than ErrRatingNotFound", func(t *testing.T) {
 
-		ctx := context.TODO()
+		db := &repositoryMock{
+			readByItemId: func() (*RatingAverage, error) {
+				return nil, fmt.Errorf("any error other than ErrRatingNotFound")
+			},
+		}
+
+		inputValid := &PutRatingInput{
+			ItemId: "658029a7-33da-4997-aeec-5e37947a1d1f",
+			Star:   5,
+		}
+
+		err := PutRating(ctx, inputValid, db)
+
+		if err == nil {
+			t.Fatalf("expected: %v, got: NIL", ErrRatingNotFound)
+		}
+
+		if err != nil {
+			if errors.Is(err, ErrPutRatingInputInvalid) {
+				t.Fatalf("expected: %s, got: %v", "any error other than ErrRatingNotFound", err)
+			}
+		}
+	})
+
+	t.Run("Should abort process when input is invalid and return error ErrPutRatingInputInvalid", func(t *testing.T) {
 
 		var testTable = []struct {
 			inputinvalid *PutRatingInput
@@ -57,9 +83,7 @@ func TestPutRating(t *testing.T) {
 					t.Fatalf("expected: %v, got: %v", ErrPutRatingInputInvalid, err)
 				}
 			}
-
 		}
-
 	})
 
 }

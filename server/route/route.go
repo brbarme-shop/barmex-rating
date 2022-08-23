@@ -17,7 +17,7 @@ var routeMaps = []routeMap{
 	{
 		methodHTTP: http.MethodPost,
 		uri:        "/rating",
-		action:     addRating,
+		action:     postRating,
 	},
 	{
 		methodHTTP: http.MethodGet,

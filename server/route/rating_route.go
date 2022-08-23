@@ -17,8 +17,7 @@ var (
 	ratingRepository = postgresql.NewRatingRepository(db)
 )
 
-// @Post
-func addRating(c *gin.Context) {
+func postRating(c *gin.Context) {
 
 	b, err := io.ReadAll(c.Request.Body)
 	if err != nil {

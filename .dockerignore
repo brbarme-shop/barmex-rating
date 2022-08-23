@@ -1,0 +1,7 @@
+LICENSE
+README.md
+.gitignore
+*.out
+.vscode/*
+.docker/*
+Makefile
